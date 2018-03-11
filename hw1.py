@@ -1,4 +1,5 @@
 from env import Env
+from trader import (Trader, ACTION_LIST)
 import pandas as pd
 import numpy as np
 import tensorflow as tf
@@ -18,7 +19,7 @@ LR_C = 0.01     # learning rate for critic
 
 N_F = 3 # 3 feature as state
 N_A = 5 # 5 action
-
+HEADER = ['open', 'high', 'low', 'close']
 
 
 class Actor(object):
@@ -123,7 +124,7 @@ if __name__ == '__main__':
                         default='output.csv',
                         help='output file name')
     args = parser.parse_args()
-    training_data = pd.read_csv(args.training, names=['open', 'high', 'low', 'close'], dtype=float)
+    training_data = pd.read_csv(args.training, names=['open', 'high', 'low', 'close'])
     env = Env()
     env.load_data(training_data)
 
@@ -136,28 +137,47 @@ if __name__ == '__main__':
 
     # start training
     for i_episode in range(MAX_EPISODE):
-        s, r = env.step(0, 0)
-        # print('day {0}: action={1}, state={2}'.format(0, 0, state))
+        state = np.array([0, 0, 0])
+        # reset training_env
+        env.set_state(state)
 
         track_r = []
-        for i in range(1, env.data_len()):
+        for i in range(0, env.data_len()):
 
-            a = actor.choose_action(s)
+            action = actor.choose_action(state)
+            # print('i: {}, action: {}？, state: {}'.format(i, action, state))
+            (reward, state_) = env.step(i, action)
 
-            s_, r = env.step(i, a)
-
-            track_r.append(r)
+            track_r.append(reward)
 
             # gradient = grad[r + gamma * V(s_) - V(s)]
-            td_error = critic.learn(s, r, s_)
+            td_error = critic.learn(state, reward, state_)
             # true_gradient = grad[logPi(s,a) * td_error]
-            actor.learn(s, a, td_error)
-            s = s_
-            # print('i: {}, action: {}'.format(i, a))
+            actor.learn(state, action, td_error)
+            state = state_
 
         ep_rs_sum = sum(track_r)
         print("episode:", i_episode, "  reward:", ep_rs_sum)
 
+    # Testing
+    testing_data = pd.read_csv(args.training, names=['open', 'high', 'low', 'close'])
+    output_file = open(args.output, 'w')
+    trader = Trader()
+    trader.load_data(testing_data)
+    state = np.array([0, 0, 0])
+    env.set_state(state)
+    for i in range(trader.data_len()):
+        if i != 0:
+            trader.reaction(i)
+        trend = actor.choose_action(state)
+        action = trader.predict_action(trend, i)
+        output_file.write(str(action) + '\n')
+        state = env.get_env(0)
+        print('Day {}: your money is {}'.format(i, trader.get_money()))
 
+    output_file.close()
 
-
+    if trader.current_state == -1:
+        print('your final money is {}'.format(trader.get_money() - testing_data['open'][trader.data_len()]))
+    if trader.current_state == 1:
+        print('your final money is {}'.format(trader.get_money() + testing_data['open'][trader.data_len()]))
