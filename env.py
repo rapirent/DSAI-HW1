@@ -31,13 +31,13 @@ class Env:
         else:
             actual_trend = (self._DATA['open'][today] - self._DATA['open'][today - 1]) / self._DATA['open'][today - 1]
 
-        if actual_trend > 0.01:
+        if moving_average_diff > 1.5:
             action_real = 4
-        elif actual_trend > 0.005:
+        elif moving_average_diff > 0.04:
             action_real = 3
-        elif actual_trend < -0.01:
+        elif moving_average_diff < -0.19:
             action_real = 0
-        elif actual_trend < -0.06:
+        elif moving_average_diff < -0.04:
             action_real = 1
         else:
             action_real = 2
@@ -49,10 +49,10 @@ class Env:
             reward = -100
         elif self.last_state[2] == action:
             reward = 20
-        elif action :
-            reward = -70
-        else:
+        elif action == 0 :
             reward = -50
+        else:
+            reward = -30
 
         n_state = self.get_env(today)
         self.set_state(n_state)

@@ -166,7 +166,7 @@ if __name__ == '__main__':
     trader.load_data(testing_data)
     state = np.array([0, 0, 0])
     env.set_state(state)
-    for i in range(trader.data_len()):
+    for i in range(trader.data_len()-1):
         if i != 0:
             trader.reaction(i)
         trend = actor.choose_action(state)
@@ -178,6 +178,6 @@ if __name__ == '__main__':
     output_file.close()
 
     if trader.current_state == -1:
-        print('your final money is {}'.format(trader.get_money() - testing_data['open'][trader.data_len()]))
+        print('your final money is {}'.format(trader.get_money() - testing_data['open'][trader.data_len()-1]))
     if trader.current_state == 1:
-        print('your final money is {}'.format(trader.get_money() + testing_data['open'][trader.data_len()]))
+        print('your final money is {}'.format(trader.get_money() + testing_data['open'][trader.data_len()-1]))
