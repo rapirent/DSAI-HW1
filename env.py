@@ -4,9 +4,10 @@ import numpy as np
 
 class Env:
 
-    def __init__(self, data=None, period=10):
+    def __init__(self, data=None, short_period=10, long_period=5):
         self._DATA = data
-        self._PERIOD = period
+        self._SHORT_PERIOD = short_period
+        self._LONG_PERIOD = long_period
         self.train_mean = None
         self.train_quantile = None
         self.error_count = [0,0,0]
@@ -18,43 +19,45 @@ class Env:
         return len(self._DATA['open'])
 
     def training_preprocess(self):
-        self.train_quantile =  (np.percentile(self._DATA['open'], 25), np.percentile(self._DATA['open'], 40),
-                            np.percentile(self._DATA['open'], 60), np.percentile(self._DATA['open'], 75))
-        self.train_mean = np.mean(self._DATA['open'])
-        print('percentile 25 - mean = {}'.format(self.train_quantile[0] - self.train_mean))
-        print('percentile 40 - mean = {}'.format(self.train_quantile[1] - self.train_mean))
-        print('percentile 60 - mean = {}'.format(self.train_quantile[2] - self.train_mean))
-        print('percentile 75 - mean= {}'.format(self.train_quantile[3] - self.train_mean))
-
+        self.train_quantile =  (np.percentile(self._DATA['close'], 10), np.percentile(self._DATA['close'], 40),
+                                np.percentile(self._DATA['close'], 60), np.percentile(self._DATA['close'], 80))
+        plus = lambda value: value if value > 0 else 0
+        short_long_total = []
+        for index in range(self.data_len()):
+            long_total = np.mean([self._DATA['close'][plus(index - i)] for i in range(self._LONG_PERIOD)])
+            short_total = np.mean([self._DATA['close'][plus(index - i)] for i in range(self._SHORT_PERIOD)])
+            short_long_total.append(long_total - short_total)
+        self.short_long_total_mean = np.mean(short_long_total)
+        self.train_open_close_diff_mean = np.mean([ (i - j) for (i, j) in zip(self._DATA['open'], self._DATA['close']) ])
 
     def get_env(self, today, last_average):
 
         plus = lambda value: value if value > 0 else 0
-        total = 0
-        tenday_list = [self._DATA['open'][plus(today - i)] for i in range(self._PERIOD)]
-        # print(tenday_list)
-        for j in tenday_list:
-            total += j
-        moving_average = (total / self._PERIOD) - self._DATA['open'][today]
-        moving_average_diff = moving_average - last_average
-        # day_diff = self._DATA['close'][today] - self._DATA['open'][today]
+        long_total = sum([self._DATA['close'][plus(today - i)] for i in range(self._LONG_PERIOD)])
+        short_total = sum([self._DATA['close'][plus(today - i)] for i in range(self._SHORT_PERIOD)])
+        moving_short_average = (short_total / self._SHORT_PERIOD) - self._DATA['open'][today]
+        moving_long_average = (long_total / self._LONG_PERIOD) - self._DATA['open'][today]
+        open_close_diff = self._DATA['open'][today] - self._DATA['close'][today]
+        moving_average_diff = moving_short_average - moving_long_average
 
-        if today == 0:
-            actual_trend = 0
-        else:
-            actual_trend = (self._DATA['open'][today] - self._DATA['open'][today - 1]) / self._DATA['open'][today - 1]
+        if abs(moving_average_diff - self.short_long_total_mean) > 0.3:
 
-        if moving_average_diff > 1:
-            action_real = 4
-        elif moving_average_diff > 0.3:
-            action_real = 3
-        elif moving_average_diff < -1:
-            action_real = 0
-        elif moving_average_diff < -0.4:
-            action_real = 1
+            if (moving_average_diff > 0) and (last_average > 0):
+                if self._DATA['close'][today] > self.train_quantile[2]:
+                    action_real = 4
+                else:
+                    action_real = 3
+            elif (moving_average_diff < 0) and (last_average < 0):
+                if self._DATA['close'][today] < self.train_quantile[1]:
+                    action_real = 0
+                else:
+                    action_real = 1
+            else:
+                action_real = 2
         else:
             action_real = 2
-        return [moving_average, moving_average_diff, action_real]
+
+        return [moving_average_diff, moving_short_average, moving_long_average, action_real]
 
     def step(self, today, action, action_real, last_average):
 
@@ -67,7 +70,7 @@ class Env:
             reward = -100
             self.error_count[0] += 1
         else:
-            reward = -50
+            reward = -20
             self.error_count[2] += 1
 
         return (reward, n_state)

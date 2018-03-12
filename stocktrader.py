@@ -1,5 +1,5 @@
 
-ACTION_LIST = {'HOLD': 1, 'IDLE': 0, 'SHORT': -1}
+ACTION_LIST = {'BUY': 1, 'IDLE': 0, 'SELL': -1}
 
 class StockValueError(Exception):
     def __init__(self, value):
@@ -31,35 +31,35 @@ class StockTrader():
 
     def predict_action(self, trend, i):
         if self.current_state == 0:
-            if trend > 3:
+            if trend == 4:
                 # up
                 # BUY
-                action = ACTION_LIST['HOLD']
-            if trend < 2:
+                action = ACTION_LIST['BUY']
+            if trend == 0:
                 # large down
-                action = ACTION_LIST['SHORT']
+                action = ACTION_LIST['SELL']
             else:
                 action = ACTION_LIST['IDLE']
         elif self.current_state == 1:
             if trend == 0:
                 # large down
                 # SOLD!
-                action = ACTION_LIST['IDLE']
+                action = ACTION_LIST['SELL']
             else:
-                action = ACTION_LIST['HOLD']
+                action = ACTION_LIST['IDLE']
         else:
-            if trend > 2:
+            if trend == 4:
                 # up
-                action = ACTION_LIST['IDLE']
+                action = ACTION_LIST['BUY']
             else:
-                # maintain the SHORT
-                action = ACTION_LIST['SHORT']
+                # maintain the
+                action = ACTION_LIST['IDLE']
         return action
 
     def reaction(self, today, action):
         today_price = self._DATA['open'][today]
         if self.current_state == 0:
-            if action == ACTION_LIST['HOLD']:
+            if action == ACTION_LIST['BUY']:
                 # Buy
                 print('----\nTAKE ACTION {} in day{} \n----'.format(action, today))
                 self.money -= today_price
@@ -71,24 +71,24 @@ class StockTrader():
                 print('----\nTAKE ACTION {} in day{} \n----'.format(action, today))
                 self.money += today_price
                 self.current_state = -1
-        if self.current_state == 1:
-            if action == ACTION_LIST['HOLD']:
-                pass
-            elif action == ACTION_LIST['IDLE']:
+        elif self.current_state == 1:
+            if action == ACTION_LIST['SELL']:
                 print('----\nTAKE ACTION {} in day{} \n----'.format(action, today))
                 self.money += today_price
                 self.current_state = 0
-            else:
-                raise StockValueError(ACTION_LIST['SHORT'])
-        if self.current_state == -1:
-            if action == ACTION_LIST['HOLD']:
-                raise StockValueError(ACTION_LIST['HOLD'])
             elif action == ACTION_LIST['IDLE']:
+                pass
+            else:
+                raise StockValueError(ACTION_LIST['BUY'])
+        else:
+            if action == ACTION_LIST['BUY']:
                 print('----\nTAKE ACTION {} in day{} \n----'.format(action, today))
                 self.money -= today_price
                 self.current_state = 0
-            else:
+            elif action == ACTION_LIST['IDLE']:
                 pass
+            else:
+                raise StockValueError(ACTION_LIST['SELL'])
 
     def get_money(self):
         return self.money

@@ -12,10 +12,10 @@ parser = argparse.ArgumentParser()
 np.random.seed(2)
 tf.set_random_seed(2)  # reproducible
 
-MAX_EPISODE = 20
+MAX_EPISODE = 30
 LR_A = 0.001    # learning rate for actor
 LR_C = 0.01     # learning rate for critic
-N_F = 3 # 3 feature as state
+N_F = 4 # 4 feature as state
 N_A = 5 # 5 action
 
 if __name__ == '__main__':
@@ -45,17 +45,21 @@ if __name__ == '__main__':
 
     # start training
     for i_episode in range(MAX_EPISODE):
-        state = np.array([0, 0, 0])
+        state = np.array([0, 0, 0, 0])
         # reset training_env
 
         track_r = []
         total_action = [0,0,0,0,0]
         error_count = [0, 0, 0]
         env.error_count = [0,0,0]
+        error_index = [0,0,0,0,0]
+        error_index_2 = [0,0,0,0,0]
+        error_index_cumulator = []
+        error_index_cumulator_2 = []
         for i in range(0, env.data_len()):
 
             action = actor.choose_action(state)
-            (reward, state_) = env.step(i, action, action_real=state[2], last_average=state[0])
+            (reward, state_) = env.step(i, action, action_real=state[3], last_average=state[0])
 
             track_r.append(reward)
 
@@ -63,10 +67,14 @@ if __name__ == '__main__':
             td_error = critic.learn(state, reward, state_)
             # true_gradient = grad[logPi(s,a) * td_error]
             actor.learn(state, action, td_error)
-            if (state[2] - action > 1) or (state[2] - action < -1):
+            if (state[3] - action > 1) or (state[3] - action < -1):
                 error_count[2] += 1
-            elif (state[2] - action > 1) or (state[2] - action < -1):
+                error_index[action] += 1
+                error_index_cumulator.append(action)
+            elif state[3] != action:
                 error_count[1] += 1
+                error_index_2[action] += 1
+                error_index_cumulator_2.append(action)
             else:
                 error_count[0] += 1
             state = state_
@@ -79,6 +87,10 @@ if __name__ == '__main__':
         print('---\n0: {}, +-<1: {}, +->1: {}\n---'.format(error_count[0], error_count[1], error_count[2]))
         print('reward list:\n -100: {}, 10: {}, -50: {}'.format(env.error_count[0], env.error_count[1], env.error_count[2]))
         print('---')
+        print('most error is {}'.format(error_index))
+        print('less error is {}'.format(error_index_2))
+        print('cumulator of most error: ', error_index_cumulator)
+        print('cumulator of less error: ', error_index_cumulator_2)
         print("episode:", i_episode, "  reward:", ep_rs_sum)
 
     # Testing
@@ -87,7 +99,7 @@ if __name__ == '__main__':
     trader = StockTrader()
     trader.load_data(testing_data)
     env.load_data(testing_data)
-    state = np.array([0, 0, 0])
+    state = np.array([0, 0, 0, 0])
     error_count = [0,0,0]
     error_index = [0,0,0,0,0]
     error_index_2 = [0,0,0,0,0]
@@ -104,11 +116,11 @@ if __name__ == '__main__':
         predict_action = trader.predict_action(trend, i)
         state_ = np.array(env.get_env(today=i, last_average=state[0]))
         state = state_
-        if (state[2] - trend > 1) or (state[2] - trend < -1):
+        if (state[3] - trend > 1) or (state[3] - trend < -1):
             error_count[2] += 1
             error_index[trend] += 1
             error_index_cumulator.append(trend)
-        elif state[2] - trend != 0:
+        elif state[3] - trend != 0:
             error_count[1] += 1
             error_index_2[trend] += 1
         else:
