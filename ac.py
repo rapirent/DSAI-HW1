@@ -1,24 +1,10 @@
-"""
-Actor-Critic using TD-error as the Advantage, Reinforcement Learning.
-The cart pole example. Policy is oscillated.
-View more on my tutorial page: https://morvanzhou.github.io/tutorials/
-Using:
-tensorflow 1.0
-gym 0.8.0
-"""
-
 import numpy as np
 import tensorflow as tf
 
-DISPLAY_REWARD_THRESHOLD = 200  # renders environment if total episode reward is greater then this threshold
-MAX_EP_STEPS = 1000   # maximum time step in one episode
-RENDER = False  # rendering wastes time
-GAMMA = 0.9     # reward discount in TD error
-LR_A = 0.001    # learning rate for actor
-LR_C = 0.01     # learning rate for critic
-
 np.random.seed(2)
 tf.set_random_seed(2)  # reproducible
+
+GAMMA = 0.9     # reward discount in TD error
 
 
 class Actor(object):
