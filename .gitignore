@@ -99,6 +99,7 @@ venv.bak/
 
 # mypy
 .mypy_cache/
-
+.Ds_store
+output.csv
 
 # End of https://www.gitignore.io/api/python
