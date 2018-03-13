@@ -31,24 +31,24 @@ class StockTrader():
 
     def predict_action(self, trend, i):
         if self.current_state == 0:
-            if trend == 4:
+            if trend > 2:
                 # up
                 # BUY
                 action = ACTION_LIST['BUY']
-            if trend == 0:
+            if trend < 2:
                 # large down
                 action = ACTION_LIST['SELL']
             else:
                 action = ACTION_LIST['IDLE']
         elif self.current_state == 1:
-            if trend == 0:
+            if trend < 1:
                 # large down
                 # SOLD!
                 action = ACTION_LIST['SELL']
             else:
                 action = ACTION_LIST['IDLE']
         else:
-            if trend == 4:
+            if trend > 2:
                 # up
                 action = ACTION_LIST['BUY']
             else:

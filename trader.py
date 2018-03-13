@@ -12,10 +12,10 @@ parser = argparse.ArgumentParser()
 np.random.seed(2)
 tf.set_random_seed(2)  # reproducible
 
-MAX_EPISODE = 30
+MAX_EPISODE = 25
 LR_A = 0.001    # learning rate for actor
 LR_C = 0.01     # learning rate for critic
-N_F = 4 # 4 feature as state
+N_F = 5 # 3 feature as state
 N_A = 5 # 5 action
 
 if __name__ == '__main__':
@@ -45,7 +45,7 @@ if __name__ == '__main__':
 
     # start training
     for i_episode in range(MAX_EPISODE):
-        state = np.array([0, 0, 0, 0])
+        (last_long_avg, last_short_avg, state) = env.reset()
         # reset training_env
 
         track_r = []
@@ -55,11 +55,10 @@ if __name__ == '__main__':
         error_index = [0,0,0,0,0]
         error_index_2 = [0,0,0,0,0]
         error_index_cumulator = []
-        error_index_cumulator_2 = []
-        for i in range(0, env.data_len()):
+        for i in range(env.data_len()):
 
             action = actor.choose_action(state)
-            (reward, state_) = env.step(i, action, action_real=state[3], last_average=state[0])
+            (last_long_avg_, last_short_avg_, reward, state_) = env.step(i, action, state[2], state[0], last_long_avg, last_short_avg)
 
             track_r.append(reward)
 
@@ -67,30 +66,31 @@ if __name__ == '__main__':
             td_error = critic.learn(state, reward, state_)
             # true_gradient = grad[logPi(s,a) * td_error]
             actor.learn(state, action, td_error)
-            if (state[3] - action > 1) or (state[3] - action < -1):
+            # XXX
+            if (state[2] - action > 1) or (state[2] - action < -1):
                 error_count[2] += 1
                 error_index[action] += 1
                 error_index_cumulator.append(action)
-            elif state[3] != action:
+            elif state[2] != action:
                 error_count[1] += 1
                 error_index_2[action] += 1
-                error_index_cumulator_2.append(action)
             else:
                 error_count[0] += 1
-            state = state_
             total_action[action] +=1
-            # print(state[3], end=' ')
-            # print(action, reward)
+            #
+            state = state_
+            last_long_avg = last_long_avg_
+            last_short_avg = last_short_avg_
+
 
         ep_rs_sum = sum(track_r)
         print('the actions are \n 0: {0},1: {1}, 2: {2}, 3: {3}, 4: {4} '.format(total_action[0],total_action[1],total_action[2], total_action[3], total_action[4]))
         print('---\n0: {}, +-<1: {}, +->1: {}\n---'.format(error_count[0], error_count[1], error_count[2]))
         print('reward list:\n -100: {}, 10: {}, -50: {}'.format(env.error_count[0], env.error_count[1], env.error_count[2]))
-        print('---')
         print('most error is {}'.format(error_index))
         print('less error is {}'.format(error_index_2))
         print('cumulator of most error: ', error_index_cumulator)
-        print('cumulator of less error: ', error_index_cumulator_2)
+        print('---')
         print("episode:", i_episode, "  reward:", ep_rs_sum)
 
     # Testing
@@ -99,7 +99,7 @@ if __name__ == '__main__':
     trader = StockTrader()
     trader.load_data(testing_data)
     env.load_data(testing_data)
-    state = np.array([0, 0, 0, 0])
+    (last_long_avg, last_short_avg, state) = env.reset()
     error_count = [0,0,0]
     error_index = [0,0,0,0,0]
     error_index_2 = [0,0,0,0,0]
@@ -114,13 +114,17 @@ if __name__ == '__main__':
 
         trend = actor.choose_action(state)
         predict_action = trader.predict_action(trend, i)
-        state_ = np.array(env.get_env(today=i, last_average=state[0]))
+        (last_long_avg_, last_short_avg_, state_) = env.get_env(i, state[0], last_long_avg, last_short_avg)
         state = state_
-        if (state[3] - trend > 1) or (state[3] - trend < -1):
+        last_long_avg = last_long_avg_
+        last_short_avg = last_short_avg_
+
+        # XXX
+        if (state[2] - trend > 1) or (state[2] - trend < -1):
             error_count[2] += 1
             error_index[trend] += 1
             error_index_cumulator.append(trend)
-        elif state[3] - trend != 0:
+        elif state[2] - trend != 0:
             error_count[1] += 1
             error_index_2[trend] += 1
         else:
