@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 
+plus = lambda value: value if value > 0 else 0
 
 class Env:
 
@@ -18,24 +19,44 @@ class Env:
         return len(self._DATA['open'])
 
     def training_preprocess(self):
-        self.train_quantile =  (np.percentile(self._DATA['open'], 25), np.percentile(self._DATA['open'], 40),
-                            np.percentile(self._DATA['open'], 60), np.percentile(self._DATA['open'], 75))
-        self.train_mean = np.mean(self._DATA['open'])
-        print('percentile 25 - mean = {}'.format(self.train_quantile[0] - self.train_mean))
-        print('percentile 40 - mean = {}'.format(self.train_quantile[1] - self.train_mean))
-        print('percentile 60 - mean = {}'.format(self.train_quantile[2] - self.train_mean))
-        print('percentile 75 - mean= {}'.format(self.train_quantile[3] - self.train_mean))
+        all_moving_average = []
+        all_moving_average_diff = []
+        for index in range(self.data_len()):
+            all_moving_average.append(np.mean([ self._DATA['open'][plus(index - i)] for i in range(self._PERIOD) ] ) - self._DATA['open'][0])
+        for index in range(1,self.data_len()):
+            all_moving_average_diff.append(all_moving_average[index] - all_moving_average[index - 1])
+
+        self.train_quantile =  (np.percentile(all_moving_average_diff, 30), np.percentile(all_moving_average_diff, 40),
+                            np.percentile(all_moving_average_diff, 60), np.percentile(all_moving_average_diff, 70))
+        self.train_mean = np.mean(all_moving_average)
+        self.avg_diff = np.mean(all_moving_average_diff)
+        error = []
+        for index in all_moving_average_diff:
+            error.append(index- self.avg_diff)
+        squaredError = []
+        for index in error:
+            squaredError.append(index ** 2)
+
+        self.avg_diff_mse = np.mean(squaredError) ** 0.5
+        self.avg_diff_std = np.std(all_moving_average_diff)
+        self.avg_diff_quantile = (self.avg_diff_std,
+                                  self.avg_diff_std/4 - self.avg_diff,
+                                  (-self.avg_diff_std/4) + self.avg_diff,
+                                  -self.avg_diff_std)
+        print('mse {}'.format(self.avg_diff_mse))
+        print('mse/4 {}'.format(self.avg_diff_mse/4))
+        print('std {}'.format(self.avg_diff_std))
+        print('std/4 {}'.format(self.avg_diff_std/4))
+        print('avg {}'.format(self.avg_diff))
+        print('avg_diff_quantile 25 {}'.format(self.avg_diff_quantile[3]))
+        print('avg_diff_quantile 40  {}'.format(self.avg_diff_quantile[2]))
+        print('avg_diff_quantile 60  {}'.format(self.avg_diff_quantile[1]))
+        print('avg_diff_quantile 75  {}'.format(self.avg_diff_quantile[0]))
 
 
     def get_env(self, today, last_average):
 
-        plus = lambda value: value if value > 0 else 0
-        total = 0
-        tenday_list = [self._DATA['open'][plus(today - i)] for i in range(self._PERIOD)]
-        # print(tenday_list)
-        for j in tenday_list:
-            total += j
-        moving_average = (total / self._PERIOD) - self._DATA['open'][today]
+        moving_average = np.mean( [self._DATA['open'][plus(today - i)] for i in range(self._PERIOD)] ) - self._DATA['open'][0]
         moving_average_diff = moving_average - last_average
         # day_diff = self._DATA['close'][today] - self._DATA['open'][today]
 
@@ -44,13 +65,13 @@ class Env:
         else:
             actual_trend = (self._DATA['open'][today] - self._DATA['open'][today - 1]) / self._DATA['open'][today - 1]
 
-        if moving_average_diff > 1:
+        if moving_average_diff > self.avg_diff_quantile[0]:
             action_real = 4
-        elif moving_average_diff > 0.3:
+        elif moving_average_diff > self.avg_diff_quantile[1]:
             action_real = 3
-        elif moving_average_diff < -1:
+        elif moving_average_diff < self.avg_diff_quantile[3]:
             action_real = 0
-        elif moving_average_diff < -0.4:
+        elif moving_average_diff < self.avg_diff_quantile[3]:
             action_real = 1
         else:
             action_real = 2
