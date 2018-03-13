@@ -47,15 +47,6 @@ class Env:
                                   self.avg_diff_std/4 - self.avg_diff,
                                   (-self.avg_diff_std/4) + self.avg_diff,
                                   -self.avg_diff_std)
-        print('mse {}'.format(self.avg_diff_mse))
-        print('mse/4 {}'.format(self.avg_diff_mse/4))
-        print('std {}'.format(self.avg_diff_std))
-        print('std/4 {}'.format(self.avg_diff_std/4))
-        print('avg {}'.format(self.avg_diff))
-        print('avg_diff_quantile 25 {}'.format(self.avg_diff_quantile[3]))
-        print('avg_diff_quantile 40  {}'.format(self.avg_diff_quantile[2]))
-        print('avg_diff_quantile 60  {}'.format(self.avg_diff_quantile[1]))
-        print('avg_diff_quantile 75  {}'.format(self.avg_diff_quantile[0]))
 
     def reset(self):
         long_moving_average = np.mean([ self._DATA['close'][plus(0 - i)] for i in range(self._LONG_PERIOD) ])

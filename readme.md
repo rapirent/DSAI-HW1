@@ -9,11 +9,11 @@ Considered about this, taking this policy to train my model with the `Actor-Crit
 
 Once we have the future stock state, we can simply take action.
 
-    ```
-    Buying shares (or returning shares in shorting) in `up` or `great up`
-    Selling shares (or shorting) in `great down`
-    Holding shares in other states
-    ```
+```
+Buying shares (or returning shares in shorting) in `up` or `great up`
+Selling shares (or shorting) in `great down`
+Holding shares in other states
+```
 
 ## Usage
 
@@ -25,13 +25,15 @@ Once we have the future stock state, we can simply take action.
 $ pip install -r requirements.txt
 ```
 
+- execute the script (you can use arguments to specify the files)
+
 ```sh
 $ python3 trader.py [--training=training_data.csv] [--testing=testing_data.csv] [--output=output.csv]
 ```
 
-# AUTHORS
+## AUTHORS
 
 [rapirent](https://github.com/raprient)
 
-# LICENSE
+## LICENSE
 MIT@2018
