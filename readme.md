@@ -31,6 +31,10 @@ $ pip install -r requirements.txt
 $ python3 trader.py [--training=training_data.csv] [--testing=testing_data.csv] [--output=output.csv]
 ```
 
+## Detail
+
+- if you want to see more, please check out the [jupyter-notebook](https://nbviewer.jupyter.org/github/rapirent/DSAI-HW1/blob/master/readme.ipynb)
+
 ## AUTHORS
 
 [rapirent](https://github.com/raprient)
