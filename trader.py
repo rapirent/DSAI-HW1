@@ -110,7 +110,7 @@ if __name__ == '__main__':
             ## if i == data_len() - 1(269), it will be the 268's action to create a reaction
             trader.reaction(i, predict_action)
             output_file.write(str(predict_action) + '\n')
-            print('Day {}: your money is {} | open: {} | action : {}'.format(i, trader.get_money(), trader.get_today_price(i), predict_action))
+            print('Day {}: your money is {} | open: {} | action : {} | real: {} | trend: {}'.format(i, trader.get_money(), trader.get_today_price(i), predict_action, state[2], trend))
 
         trend = actor.choose_action(state)
         predict_action = trader.predict_action(trend, i)
@@ -149,3 +149,4 @@ if __name__ == '__main__':
             trader.get_money(),
             testing_data['close'][trader.data_len() - 1])
     print(final_line)
+    print('the origin buy-and-hold is {}'.format((testing_data['close'][trader.data_len() - 1] - testing_data['open'][1])))

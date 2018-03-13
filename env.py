@@ -74,7 +74,7 @@ class Env:
         current_cross_diff = long_moving_average - short_moving_average
         last_cross_diff = last_long_avg - last_short_avg
 
-        if current_cross_diff * last_cross_diff < 0:
+        if current_cross_diff * last_cross_diff < 0 and today > 20:
             if short_moving_average >= long_moving_average:
                 action_real = 4
             else:
