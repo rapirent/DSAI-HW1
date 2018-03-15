@@ -66,31 +66,12 @@ if __name__ == '__main__':
             td_error = critic.learn(state, reward, state_)
             # true_gradient = grad[logPi(s,a) * td_error]
             actor.learn(state, action, td_error)
-            # XXX
-            if (state[2] - action > 1) or (state[2] - action < -1):
-                error_count[2] += 1
-                error_index[action] += 1
-                error_index_cumulator.append(action)
-            elif state[2] != action:
-                error_count[1] += 1
-                error_index_2[action] += 1
-            else:
-                error_count[0] += 1
-            total_action[action] +=1
-            #
             state = state_
             last_long_avg = last_long_avg_
             last_short_avg = last_short_avg_
 
 
         ep_rs_sum = sum(track_r)
-        print('the actions are \n 0: {0},1: {1}, 2: {2}, 3: {3}, 4: {4} '.format(total_action[0],total_action[1],total_action[2], total_action[3], total_action[4]))
-        print('---\n0: {}, +-<1: {}, +->1: {}\n---'.format(error_count[0], error_count[1], error_count[2]))
-        print('reward list:\n -100: {}, 10: {}, -50: {}'.format(env.error_count[0], env.error_count[1], env.error_count[2]))
-        print('most error is {}'.format(error_index))
-        print('less error is {}'.format(error_index_2))
-        print('cumulator of most error: ', error_index_cumulator)
-        print('---')
         print("episode:", i_episode, "  reward:", ep_rs_sum)
 
     # Testing
@@ -118,21 +99,6 @@ if __name__ == '__main__':
         state = state_
         last_long_avg = last_long_avg_
         last_short_avg = last_short_avg_
-
-        # XXX
-        if (state[2] - trend > 1) or (state[2] - trend < -1):
-            error_count[2] += 1
-            error_index[trend] += 1
-            error_index_cumulator.append(trend)
-        elif state[2] - trend != 0:
-            error_count[1] += 1
-            error_index_2[trend] += 1
-        else:
-            error_count[0] += 1
-    print('0: {}, +-<1: {}, +->1: {}'.format(error_count[0], error_count[1], error_count[2]))
-    print('most error is {}'.format(error_index))
-    print('less error is {}'.format(error_index_2))
-    print('cumulator of most error: ', error_index_cumulator)
 
     output_file.close()
 

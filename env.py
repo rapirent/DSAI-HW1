@@ -13,8 +13,6 @@ class Env:
         self._LONG_PERIOD = 20
         self.train_mean = None
         self.train_quantile = None
-        # XXX
-        self.error_count = [0,0,0]
 
     def load_data(self, data):
         self._DATA = data
@@ -29,7 +27,6 @@ class Env:
             all_moving_average.append(np.mean([ self._DATA['open'][plus(index - i)] for i in range(self._PERIOD) ] ) - self._DATA['open'][0])
         for index in range(1,self.data_len()):
             all_moving_average_diff.append(all_moving_average[index] - all_moving_average[index - 1])
-        print(all_moving_average_diff)
         self.train_quantile =  (np.percentile(all_moving_average_diff, 30), np.percentile(all_moving_average_diff, 40),
                             np.percentile(all_moving_average_diff, 60), np.percentile(all_moving_average_diff, 70))
         self.train_mean = np.mean(all_moving_average)
@@ -88,12 +85,9 @@ class Env:
         last_long_avg_, last_short_avg_, n_state = self.get_env(today, last_average, last_long_avg, last_short_avg)
         if action_real == action:
             reward = 20
-            self.error_count[1] += 1
         elif action_real - action > 1 or action_real - action < -1:
             reward = -100
-            self.error_count[0] += 1
         else:
             reward = -50
-            self.error_count[2] += 1
 
         return (last_long_avg_, last_short_avg_, reward, n_state)
