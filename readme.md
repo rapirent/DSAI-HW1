@@ -1,4 +1,4 @@
-# DSAI-HW1
+# Stock-prediction
 
 ## Description
 
